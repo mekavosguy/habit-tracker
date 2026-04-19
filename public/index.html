@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Habit Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,300;9..144,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #F7F6F2;
+  --surface: #FFFFFF;
+  --border: #E5E3DC;
+  --text-primary: #1A1916;
+  --text-secondary: #7A7870;
+  --text-muted: #B0AEA8;
+  --accent: #2D6A4F;
+  --accent-light: #E8F5EF;
+  --accent-mid: #52B788;
+  --done-bg: #D8F3DC;
+  --done-color: #1B4332;
+  --tag-focus-bg: #FEF3C7; --tag-focus: #92400E;
+  --tag-health-bg: #D8F3DC; --tag-health: #1B4332;
+  --tag-body-bg: #FCE7F3; --tag-body: #9D174D;
+}
+
+body {
+  background: var(--bg);
+  font-family: 'DM Sans', sans-serif;
+  color: var(--text-primary);
+  min-height: 100vh;
+}
+
+/* ── HEADER ── */
+.app-header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Fraunces', serif;
+  font-size: 20px;
+  font-weight: 300;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+.logo-icon { font-size: 22px; }
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.year-badge {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 10px;
+  letter-spacing: 0.06em;
+}
+
+/* ── LAYOUT ── */
+.page { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+/* ── PAGE TITLE ── */
+.page-top { margin-bottom: 1.5rem; }
+
+.page-title {
+  font-family: 'Fraunces', serif;
+  font-size: 36px;
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
+}
+
+.page-meta {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+}
+
+/* ── STATS ── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 18px;
+  transition: border-color 0.15s;
+}
+
+.stat-card:hover { border-color: var(--accent-mid); }
+
+.stat-label {
+  font-size: 11px;
+  font-family: 'DM Mono', monospace;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+}
+
+.stat-value {
+  font-family: 'Fraunces', serif;
+  font-size: 32px;
+  font-weight: 300;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.stat-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  font-family: 'DM Mono', monospace;
+}
+
+/* ── MONTH TABS ── */
+.section-label {
+  font-size: 11px;
+  font-family: 'DM Mono', monospace;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 10px;
+}
+
+.month-tabs {
+  display: flex;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0;
+  scrollbar-width: none;
+}
+.month-tabs::-webkit-scrollbar { display: none; }
+
+.month-tab {
+  padding: 8px 16px;
+  font-size: 12px;
+  font-family: 'DM Mono', monospace;
+  color: var(--text-muted);
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  letter-spacing: 0.04em;
+  transition: all 0.15s;
+  margin-bottom: -1px;
+}
+
+.month-tab:hover { color: var(--text-secondary); }
+.month-tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 500; }
+
+/* ── TRACKER GRID ── */
+.tracker-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 14px 14px;
+  overflow-x: auto;
+  margin-bottom: 2rem;
+}
+
+.tracker-table {
+  min-width: 900px;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tracker-table thead tr {
+  background: var(--bg);
+}
+
+.tracker-table thead th {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-muted);
+  font-weight: 400;
+  text-align: center;
+  padding: 9px 2px;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  letter-spacing: 0.02em;
+}
+
+.tracker-table thead th:first-child {
+  text-align: left;
+  padding-left: 16px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  min-width: 170px;
+}
+
+.tracker-table thead th:last-child { border-right: none; font-weight: 500; color: var(--text-primary); }
+
+.tracker-table tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background 0.1s;
+}
+
+.tracker-table tbody tr:last-child { border-bottom: none; }
+.tracker-table tbody tr:hover { background: #FAFAF8; }
+
+.habit-name-cell {
+  padding: 0 16px;
+  font-size: 13px;
+  border-right: 1px solid var(--border);
+  white-space: nowrap;
+  min-width: 170px;
+  height: 42px;
+}
+
+.habit-name-inner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.habit-icon { font-size: 15px; }
+
+.day-cell {
+  text-align: center;
+  border-right: 1px solid var(--border);
+  width: 28px;
+  cursor: pointer;
+  transition: background 0.1s;
+  height: 42px;
+  position: relative;
+}
+
+.day-cell:hover { background: var(--accent-light); }
+.day-cell.checked { background: var(--done-bg); }
+.day-cell.checked:hover { background: #C0EBC8; }
+.day-cell.inactive { background: #F7F6F2; cursor: default; pointer-events: none; }
+.day-cell:last-of-type { border-right: none; }
+
+.checkmark {
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--border);
+  border-radius: 3px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  color: transparent;
+  background: white;
+  transition: all 0.12s;
+}
+
+.day-cell.checked .checkmark {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+.total-cell {
+  text-align: center;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent);
+  padding: 0 10px;
+  min-width: 46px;
+}
+
+/* ── HABIT MANAGEMENT ── */
+.mgmt-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 2rem;
+}
+
+.mgmt-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.mgmt-title {
+  font-size: 12px;
+  font-family: 'DM Mono', monospace;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.add-btn {
+  background: var(--accent-light);
+  color: var(--accent);
+  border: none;
+  border-radius: 7px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-family: 'DM Mono', monospace;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.add-btn:hover { background: #C7E8D4; }
+
+.habit-mgmt-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  transition: background 0.1s;
+}
+.habit-mgmt-row:last-child { border-bottom: none; }
+.habit-mgmt-row:hover { background: #FAFAF8; }
+
+.habit-mgmt-icon { font-size: 16px; }
+.habit-mgmt-name { flex: 1; color: var(--text-primary); }
+
+.tag-pill {
+  font-size: 11px;
+  padding: 2px 9px;
+  border-radius: 20px;
+  font-family: 'DM Mono', monospace;
+}
+.tag-focus { background: var(--tag-focus-bg); color: var(--tag-focus); }
+.tag-health { background: var(--tag-health-bg); color: var(--tag-health); }
+.tag-body { background: var(--tag-body-bg); color: var(--tag-body); }
+
+.streak-badge {
+  font-size: 11px;
+  padding: 2px 9px;
+  border-radius: 20px;
+  background: var(--accent-light);
+  color: var(--accent);
+  font-family: 'DM Mono', monospace;
+  font-weight: 500;
+}
+
+.del-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 15px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  line-height: 1;
+  transition: background 0.1s, color 0.1s;
+}
+.del-btn:hover { background: #FCE7F3; color: #9D174D; }
+
+/* ── ADD HABIT FORM ── */
+.add-form {
+  display: flex;
+  gap: 10px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.add-form input[type="text"] {
+  flex: 1;
+  min-width: 160px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 13px;
+  font-family: 'DM Sans', sans-serif;
+  background: var(--surface);
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.add-form input:focus { border-color: var(--accent-mid); }
+
+.add-form select {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-family: 'DM Mono', monospace;
+  background: var(--surface);
+  color: var(--text-secondary);
+  outline: none;
+  cursor: pointer;
+}
+
+.icon-picker {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.icon-opt {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid transparent;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.1s;
+}
+.icon-opt:hover { background: var(--accent-light); }
+.icon-opt.selected { border-color: var(--accent-mid); background: var(--accent-light); }
+
+.confirm-btn {
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 18px;
+  font-size: 12px;
+  font-family: 'DM Mono', monospace;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.15s;
+}
+.confirm-btn:hover { background: #1B5E3B; }
+
+/* ── QUOTE FOOTER ── */
+.quote-footer {
+  border-top: 1px solid var(--border);
+  padding-top: 1.5rem;
+  font-family: 'Fraunces', serif;
+  font-size: 14px;
+  font-style: italic;
+  font-weight: 300;
+  color: var(--text-muted);
+}
+.quote-footer cite {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  font-family: 'DM Mono', monospace;
+  font-style: normal;
+  letter-spacing: 0.03em;
+}
+
+/* ── TOAST ── */
+.toast {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--text-primary);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: 'DM Mono', monospace;
+  transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  z-index: 999;
+  pointer-events: none;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* ── LOADER ── */
+.loader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  color: var(--text-muted);
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  letter-spacing: 0.05em;
+}
+
+@media (max-width: 640px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .page-title { font-size: 26px; }
+  .page { padding: 1rem 1rem 3rem; }
+}
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="logo">
+    <span class="logo-icon">🌿</span>
+    Habit Tracker
+  </div>
+  <div class="header-right">
+    <span class="year-badge" id="year-badge">2026</span>
+  </div>
+</header>
+
+<div class="page">
+  <div class="page-top">
+    <h1 class="page-title">Daily Habits</h1>
+    <p class="page-meta" id="page-meta">// loading...</p>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">Total checks</div>
+      <div class="stat-value" id="stat-total">—</div>
+      <div class="stat-sub">this month</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Completion</div>
+      <div class="stat-value" id="stat-pct">—</div>
+      <div class="stat-sub">of possible days</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Best habit</div>
+      <div class="stat-value" id="stat-best" style="font-size:15px; margin-top:8px;">—</div>
+      <div class="stat-sub">most consistent</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Days logged</div>
+      <div class="stat-value" id="stat-days">—</div>
+      <div class="stat-sub">at least 1 check</div>
+    </div>
+  </div>
+
+  <!-- Month Tabs -->
+  <div class="section-label">Monthly grid</div>
+  <div class="month-tabs" id="month-tabs">
+    <button class="month-tab" data-m="1">JAN</button>
+    <button class="month-tab" data-m="2">FEB</button>
+    <button class="month-tab" data-m="3">MAR</button>
+    <button class="month-tab" data-m="4">APR</button>
+    <button class="month-tab" data-m="5">MAY</button>
+    <button class="month-tab" data-m="6">JUN</button>
+    <button class="month-tab" data-m="7">JUL</button>
+    <button class="month-tab" data-m="8">AUG</button>
+    <button class="month-tab" data-m="9">SEP</button>
+    <button class="month-tab" data-m="10">OCT</button>
+    <button class="month-tab" data-m="11">NOV</button>
+    <button class="month-tab" data-m="12">DEC</button>
+  </div>
+
+  <!-- Tracker grid -->
+  <div class="tracker-wrap">
+    <div id="grid-loader" class="loader">loading habits...</div>
+    <table class="tracker-table" id="tracker-table" style="display:none;">
+      <thead id="grid-head"></thead>
+      <tbody id="grid-body"></tbody>
+    </table>
+  </div>
+
+  <!-- Habit management -->
+  <div class="section-label">Habits</div>
+  <div class="mgmt-wrap">
+    <div class="mgmt-header">
+      <span class="mgmt-title">Manage habits</span>
+      <button class="add-btn" id="toggle-add-btn">+ add habit</button>
+    </div>
+    <div id="habit-list"></div>
+    <div id="add-form-wrap" style="display:none;">
+      <div class="add-form">
+        <input type="text" id="new-habit-name" placeholder="Habit name (e.g. Read 30 min)..." maxlength="30" />
+        <select id="new-habit-tag">
+          <option value="focus">focus</option>
+          <option value="health">health</option>
+          <option value="body">body</option>
+        </select>
+        <div class="icon-picker" id="icon-picker"></div>
+        <button class="confirm-btn" id="confirm-add-btn">Add habit</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="quote-footer">
+    "People do not decide their futures, they decide their habits and their habits decide their futures."
+    <cite>— F.M. Alexander</cite>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const ICONS = ['🏃','📖','💧','🧘','🥗','🌟','💪','🎯','✍️','🚴','🌊','🍎','😴','🧠','🎨'];
+const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+const DAYS_IN_MONTH = [31,28,31,30,31,30,31,31,30,31,30,31];
+
+const YEAR = 2026;
+let currentMonth = 4; // April (1-indexed)
+let habits = [];
+let checks = {}; // key: "habitId-day" => true
+let selectedIcon = ICONS[0];
+
+// ── API helpers ──
+async function api(path, opts = {}) {
+  const res = await fetch(path, {
+    headers: { 'Content-Type': 'application/json' },
+    ...opts
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+// ── Toast ──
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+// ── Load data ──
+async function loadAll() {
+  try {
+    habits = await api('/api/habits');
+    await loadChecks();
+    renderGrid();
+    renderHabitList();
+    updateStats();
+  } catch(e) {
+    document.getElementById('grid-loader').textContent = 'Could not connect to server.';
+  }
+}
+
+async function loadChecks() {
+  const data = await api(`/api/checks?year=${YEAR}&month=${currentMonth}`);
+  checks = {};
+  data.forEach(r => { checks[`${r.habit_id}-${r.day}`] = true; });
+}
+
+// ── Grid ──
+function renderGrid() {
+  const days = DAYS_IN_MONTH[currentMonth - 1];
+  const head = document.getElementById('grid-head');
+  const body = document.getElementById('grid-body');
+
+  // Header
+  let hHTML = `<tr><th>HABIT</th>`;
+  for (let d = 1; d <= 31; d++) {
+    hHTML += `<th style="${d > days ? 'opacity:0.25' : ''}">${d}</th>`;
+  }
+  hHTML += `<th>TTL</th></tr>`;
+  head.innerHTML = hHTML;
+
+  // Rows
+  body.innerHTML = habits.map(h => {
+    let total = 0;
+    let cells = '';
+    for (let d = 1; d <= 31; d++) {
+      const inactive = d > days;
+      const checked = !inactive && checks[`${h.id}-${d}`];
+      if (checked) total++;
+      cells += `<td class="day-cell ${checked ? 'checked' : ''} ${inactive ? 'inactive' : ''}"
+        ${!inactive ? `onclick="toggleCheck(${h.id},${d})"` : ''}>
+        ${inactive ? '' : `<div class="checkmark">${checked ? '✓' : ''}</div>`}
+      </td>`;
+    }
+    return `<tr>
+      <td class="habit-name-cell">
+        <div class="habit-name-inner">
+          <span class="habit-icon">${h.icon}</span>${h.name}
+        </div>
+      </td>
+      ${cells}
+      <td class="total-cell">${total}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('grid-loader').style.display = 'none';
+  document.getElementById('tracker-table').style.display = 'table';
+  document.getElementById('page-meta').textContent = `// ${YEAR} · ${MONTHS[currentMonth-1]} · ${habits.length} habits tracked`;
+}
+
+async function toggleCheck(habitId, day) {
+  const k = `${habitId}-${day}`;
+  // Optimistic update
+  if (checks[k]) delete checks[k]; else checks[k] = true;
+  renderGrid();
+  updateStats();
+  try {
+    await api('/api/checks/toggle', {
+      method: 'POST',
+      body: JSON.stringify({ habit_id: habitId, year: YEAR, month: currentMonth, day })
+    });
+  } catch(e) {
+    // Revert on error
+    if (checks[k]) delete checks[k]; else checks[k] = true;
+    renderGrid();
+    toast('Error saving. Try again.');
+  }
+}
+
+// ── Stats ──
+function updateStats() {
+  const days = DAYS_IN_MONTH[currentMonth - 1];
+  const possible = habits.length * days;
+  let total = 0;
+  let perHabit = {};
+  let daysSet = new Set();
+
+  habits.forEach(h => {
+    perHabit[h.id] = 0;
+    for (let d = 1; d <= days; d++) {
+      if (checks[`${h.id}-${d}`]) {
+        total++; perHabit[h.id]++; daysSet.add(d);
+      }
+    }
+  });
+
+  const pct = possible > 0 ? Math.round(total / possible * 100) : 0;
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-pct').textContent = pct + '%';
+  document.getElementById('stat-days').textContent = daysSet.size;
+
+  let bestHabit = null, bestVal = 0;
+  habits.forEach(h => { if ((perHabit[h.id]||0) > bestVal) { bestVal = perHabit[h.id]; bestHabit = h; }});
+  document.getElementById('stat-best').textContent = bestHabit && bestVal > 0 ? `${bestHabit.icon} ${bestHabit.name}` : '—';
+}
+
+// ── Habit List ──
+function renderHabitList() {
+  const days = DAYS_IN_MONTH[currentMonth - 1];
+  document.getElementById('habit-list').innerHTML = habits.map(h => {
+    let streak = 0;
+    const today = new Date().getDate();
+    for (let d = Math.min(today, days); d >= 1; d--) {
+      if (checks[`${h.id}-${d}`]) streak++; else break;
+    }
+    return `<div class="habit-mgmt-row">
+      <span class="habit-mgmt-icon">${h.icon}</span>
+      <span class="habit-mgmt-name">${h.name}</span>
+      <span class="tag-pill tag-${h.tag}">${h.tag}</span>
+      ${streak > 0 ? `<span class="streak-badge">${streak}d streak</span>` : ''}
+      <button class="del-btn" onclick="deleteHabit(${h.id})" title="Remove">✕</button>
+    </div>`;
+  }).join('');
+}
+
+async function deleteHabit(id) {
+  if (habits.length <= 1) { toast('Keep at least one habit!'); return; }
+  if (!confirm('Remove this habit and all its data?')) return;
+  await api(`/api/habits/${id}`, { method: 'DELETE' });
+  habits = habits.filter(h => h.id !== id);
+  await loadChecks();
+  renderGrid();
+  renderHabitList();
+  updateStats();
+  toast('Habit removed');
+}
+
+// ── Add Habit ──
+function buildIconPicker() {
+  const picker = document.getElementById('icon-picker');
+  picker.innerHTML = ICONS.map(ic =>
+    `<div class="icon-opt ${ic === selectedIcon ? 'selected' : ''}" onclick="selectIcon('${ic}')">${ic}</div>`
+  ).join('');
+}
+
+function selectIcon(ic) {
+  selectedIcon = ic;
+  buildIconPicker();
+}
+
+document.getElementById('toggle-add-btn').addEventListener('click', () => {
+  const wrap = document.getElementById('add-form-wrap');
+  const shown = wrap.style.display !== 'none';
+  wrap.style.display = shown ? 'none' : 'block';
+  if (!shown) { buildIconPicker(); document.getElementById('new-habit-name').focus(); }
+});
+
+document.getElementById('confirm-add-btn').addEventListener('click', addHabit);
+document.getElementById('new-habit-name').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addHabit();
+});
+
+async function addHabit() {
+  const name = document.getElementById('new-habit-name').value.trim();
+  const tag = document.getElementById('new-habit-tag').value;
+  if (!name) { toast('Enter a habit name!'); return; }
+  try {
+    const habit = await api('/api/habits', {
+      method: 'POST',
+      body: JSON.stringify({ name, icon: selectedIcon, tag })
+    });
+    habits.push(habit);
+    document.getElementById('new-habit-name').value = '';
+    document.getElementById('add-form-wrap').style.display = 'none';
+    renderGrid();
+    renderHabitList();
+    updateStats();
+    toast(`"${name}" added!`);
+  } catch(e) {
+    toast('Error adding habit');
+  }
+}
+
+// ── Month Tabs ──
+document.getElementById('month-tabs').addEventListener('click', async e => {
+  const btn = e.target.closest('.month-tab');
+  if (!btn) return;
+  document.querySelectorAll('.month-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentMonth = +btn.dataset.m;
+  document.getElementById('grid-loader').style.display = 'flex';
+  document.getElementById('tracker-table').style.display = 'none';
+  await loadChecks();
+  renderGrid();
+  renderHabitList();
+  updateStats();
+});
+
+// ── Init ──
+document.querySelector(`[data-m="${currentMonth}"]`).classList.add('active');
+loadAll();
+</script>
+</body>
+</html>
